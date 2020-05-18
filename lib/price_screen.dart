@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'coin_data.dart';
+import 'package:bitcoin_ticker/utilities/coin_data.dart';
 import 'dart:io' show Platform;
 //import 'dart:io' hide Platform;
 
@@ -11,6 +11,9 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   String dropdownVale = currenciesList.first;
+  double priceData;
+  var coinIndicesData;
+  CoinData coinData = CoinData();
 
   List<DropdownMenuItem> getDropdownItems() {
     return currenciesList.map<DropdownMenuItem<String>>((String value) {
@@ -25,10 +28,10 @@ class _PriceScreenState extends State<PriceScreen> {
     return DropdownButton<String>(
       value: dropdownVale,
       items: getDropdownItems(),
-      onChanged: (newValue) {
-        setState(() {
+      onChanged: (newValue) async {
+        await coinData.setPrices(newValue);
+        setState(()  {
           dropdownVale = newValue;
-          print(newValue);
         });
       },
     );
@@ -68,35 +71,55 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = ? USD',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+          for (var currenci in cryptoList)
+            CoinCard(
+              coin: currenci,
+              price: coinData.cryptoPrices[currenci] ?? 0,
+              equal: dropdownVale,
             ),
-          ),
           Container(
             height: 150.0,
             alignment: Alignment.center,
             padding: EdgeInsets.only(bottom: 30.0),
             color: Colors.lightBlue,
-            child: getPicker(),
+            child: Platform.isIOS
+                ? iOSPickerButton()
+                : androidDropdownButton(), //getPicker(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class CoinCard extends StatelessWidget {
+  const CoinCard({this.coin, this.price, this.equal});
+
+  final String coin;
+  final double price;
+  final String equal;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
+      child: Card(
+        color: Colors.lightBlueAccent,
+        elevation: 5.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+          child: Text(
+            '1 $coin = $price $equal',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
     );
   }
